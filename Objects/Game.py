@@ -68,16 +68,14 @@ class Game:
         Returns:
             set[Team]: Set of winners.
         """
-        winners = set()
+        winners = dict()
         max_score = 0
         for t in self._teams:
-            if len(t.alive_members) > 0:
-                if max_score < t.get_score():
-                    max_score = t.get_score()
-                    winners.clear()
-                    winners.add(t)
-                elif max_score == t.get_score():
-                    winners.add(t)
+            if t.get_score() > max_score:
+                winners.clear()
+                max_score = t.get_score()
+            if t.get_score() == max_score:
+                winners[t.title] = max_score
         return winners
 
     def get_team(self, title):
