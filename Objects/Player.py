@@ -1,5 +1,7 @@
-from logging import setLoggerClass
+# -*- coding: utf-8 -*-
 
+from logging import setLoggerClass
+from .Effects import ALL_EFFECTS
 
 class Player:
     """The Player class which stores all information for every player.
@@ -23,6 +25,7 @@ class Player:
         self._health_points = max_health_points
         self._mana_points = max_health_points
         self._armor = armor
+        # effects list contain a dicts with indexes of effects, its duration and possibility of clearing
         self._effects = list()
 
     def __repr__(self) -> str:
@@ -94,8 +97,21 @@ class Player:
         self._armor = 0
         self._effects.clear()
 
-    def add_effect(self, effect) -> None:
-        self._effects.append(effect)
+    def add_effect(self, idx: int, duration: int=1, is_cleanable: int=True) -> None:
+        self._effects.append({"idx": idx,
+                              "duration": duration,
+                              "is_cleanable": is_cleanable
+                            })
+
+    def clean_effects(self, hard: bool=False) -> None:
+        """Clean effects from a player. It can clean even not cleanable if hard is True.
+
+        Args:
+            hard (bool, optional): A flag to clean all effects. Defaults to False.
+        """
+        for e in self._effects.copy():
+            if hard or not (e["is_cleanable"] or ALL_EFFECTS[e["idx"]]["is_cleanable"]):
+                self._effects.remove(e)
 
     def dump(self) -> dict:
         """Allows to save a player as a dict.
@@ -104,6 +120,21 @@ class Player:
             dict: A dict with all players info.
         """
         return {
-            "name" : self.name,
-
+            "max_health_points" : self._max_health_points,
+            "health_points" : self._health_points,
+            "mana_points" : self._mana_points,
+            "armor" : self._armor,
+            "effects" : self._effects
         }
+
+    def load(self, stored_player: dict):
+        """Loads all settings of a player from a dict.
+
+        Args:
+            stored_player (dict): A dict with player's properties.
+        """
+        self._max_health_points = stored_player["max_health_points"]
+        self._health_points = stored_player["health_points"]
+        self._mana_points = stored_player["mana_points"]
+        self._armor = stored_player["armor"]
+        self._effects = stored_player["effects"]

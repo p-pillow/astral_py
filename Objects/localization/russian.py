@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*-
+
 RUS_TEXTS = {
     "spells" : {
         0 : { # 0 level
@@ -46,5 +48,9 @@ RUS_TEXTS = {
                   "self_lose_message": "{player_name} не может прикрыться магическим щитом",
                   },
         }
+    },
+    "effects": {
+        1: {"title": "Горение", "message": "Горение наносит {player_name} {damage} урона"},
+
     }
 }

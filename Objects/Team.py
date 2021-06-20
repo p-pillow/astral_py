@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*-
+
 from typing import Dict, Set, Iterable
 
 from .Player import Player

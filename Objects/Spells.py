@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*-
+
 from . import Player
 
 SPELLS_TYPES = {
@@ -25,8 +27,12 @@ def common_spell(player: Player, **kwargs):
             player.add_effect(eff)
 
 ALL_SPELLS = [
-    {"idx": 1, "level": 0, "title": "Meditation", "priority": 21, "type": SPELLS_TYPES["SELF"], "func": common_spell, "kwargs": {"add_mp": 3, "effects": ("Mana resist", "Prophecy")}},
-    {"idx": 2, "level": 0, "title": "Run",        "priority": 18, "type": SPELLS_TYPES["SELF"], "func": common_spell, "kwargs": {"add_armory": 1, "effects": ("Run", )}},
+    {"idx": 1, "level": 0, "priority": 21, "type": SPELLS_TYPES["SELF"], "func": common_spell, "kwargs": {"add_mp": 3, "effects": ("Mana resist", "Prophecy")}},
+    {"idx": 2, "level": 0, "priority": 18, "type": SPELLS_TYPES["SELF"], "func": common_spell, "kwargs": {"add_armory": 1, "effects": ("Run", )}},
+    {"idx": 3, "level": 0, "priority": 18, "type": SPELLS_TYPES["SELF"], "func": common_spell, "kwargs": {"add_armory": 1, "effects": ("Run", )}},
+    {"idx": 1, "level": 1, "priority": 18, "type": SPELLS_TYPES["SELF"], "func": common_spell, "kwargs": {"add_armory": 1, "effects": ("Run", )}},
+    {}
+
 ]
 
 def get_spell(spell_idx: int, spell_lvl: int):

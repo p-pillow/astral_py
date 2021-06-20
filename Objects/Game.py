@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*-
+
 from Objects.Team import Team
 import logging
 from datetime import datetime
