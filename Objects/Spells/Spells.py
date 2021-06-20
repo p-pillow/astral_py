@@ -25,19 +25,12 @@ def common_spell(player: Player, **kwargs):
             player.add_effect(eff)
 
 ALL_SPELLS = [
-    {"idx": 1, "level": 0, "title": "Meditation", "alias": 'м', "priority": 21, "type": SPELLS_TYPES["SELF"], "func": common_spell, "kwargs": {"add_mp": 3, "effects": ("Mana resist", "Prophecy")}},
-    {"idx": 2, "level": 0, "title": "Run",        "alias": 'б', "priority": 18, "type": SPELLS_TYPES["SELF"], "func": common_spell, "kwargs": {"add_armory": 1, "effects": ("Run", )}},
+    {"idx": 1, "level": 0, "title": "Meditation", "priority": 21, "type": SPELLS_TYPES["SELF"], "func": common_spell, "kwargs": {"add_mp": 3, "effects": ("Mana resist", "Prophecy")}},
+    {"idx": 2, "level": 0, "title": "Run",        "priority": 18, "type": SPELLS_TYPES["SELF"], "func": common_spell, "kwargs": {"add_armory": 1, "effects": ("Run", )}},
 ]
 
-def get_spell(move: str):
-    if move.isalnum():
-        spell_level = int(move[0])
-        spell_idx = int(move[1:])
-        for spell in ALL_SPELLS:
-            if spell["level"] == spell_level and spell["level"] == spell_idx:
-                return spell
-    else: # it is alias
-        for spell in ALL_SPELLS:
-            if spell["alias"] == move:
-                return spell
-    raise ValueError(f"There is no spell {move}")
+def get_spell(spell_idx: int, spell_lvl: int):
+    for spell in ALL_SPELLS:
+        if spell["level"] == spell_lvl and spell["level"] == spell_idx:
+            return spell
+    raise ValueError(f"There is no spell with idx {spell_idx} of level {spell_lvl}")
