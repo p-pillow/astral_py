@@ -1,4 +1,4 @@
-from typing import Set, Iterable
+from typing import Dict, Set, Iterable
 
 from .Player import Player
 
@@ -10,49 +10,46 @@ class Team:
         if not isinstance(title, str):
             raise ValueError(f"Team's title must be a string, not {type(title)}")
         self._title: str = title
-        self._members: Set[Player] = {*members}
+        self._members: Dict[Player] = {m.name: m for m in members}
 
     def __len__(self):
-        #TODO: write Team len docstring
         return len(self._members)
     
-    def __getitem__(self, title: str) -> Player:
-        #TODO: write Team getitem docstring
-        for p in self._members:
-            if p.name == title:
-                return p
-        raise ValueError(f"In {self._title} team no player with title {title}")
+    def __getitem__(self, name: str) -> Player:
+        """Allows to get a member of a team by his name.
+
+        Args:
+            name (str): A name of a member.
+
+        Raises:
+            ValueError: If there is no member with a given name.
+
+        Returns:
+            Player: A member of a team.
+        """
+        if name in self._members:
+            return self._members[name]
+        else:
+            raise ValueError(f"In {self._title} team no player with name {name}")
 
     def __repr__(self) -> str:
-        #TODO: write Team repr docstring
         return f"<Team {self._title}>"
 
     def __str__(self) -> str:
-        #TODO: write Team str docstring
         members_str = ',\n\t'.join(str(p) for p in self._members)
         return f"Team {self._title}:\n\t{members_str}"
 
     @property
     def title(self) -> str:
-        #TODO: write Team title docstring
         return self._title
 
     def add(self, member: Player) -> None:
-        #TODO: write Team add docstring
-        if isinstance(member, Player):
-            self._members.add(member)
-        else:
+        if not isinstance(member, Player):
             raise ValueError(f"You try to add not a Player: {member}")
-
-    @property
-    def alive_members(self) -> Set[Player]:
-        #TODO: write Team alive docstring
-        return {p for p in self._members if p.is_alive}
-
-    @property
-    def members(self) -> Set[Player]:
-        #TODO: write Team alive docstring
-        return self._members.copy()
+        elif member.name in self._members:
+            raise ValueError(f"A Player {member.name} is already in the team")
+        else:
+            self._members[member.name] = member
 
     def get_score(self) -> int:
-        return sum(p.score for p in self._members if p.is_alive)
+        return sum(self._members[name].score for name in self._members)
