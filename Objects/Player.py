@@ -45,7 +45,7 @@ class Player:
 
     @property
     def score(self) -> int:
-        return self._health_points + self._mana_points
+        return self._health_points + self._mana_points if self.is_alive else 0
 
     @property
     def health_points(self) -> int:
@@ -96,3 +96,14 @@ class Player:
 
     def add_effect(self, effect) -> None:
         self._effects.append(effect)
+
+    def dump(self) -> dict:
+        """Allows to save a player as a dict.
+
+        Returns:
+            dict: A dict with all players info.
+        """
+        return {
+            "name" : self.name,
+
+        }
