@@ -1,12 +1,20 @@
 # -*- coding: utf-8 -*-
 
-from logging import setLoggerClass
-from .Effects import ALL_EFFECTS
+from collections import OrderedDict
+from typing import Iterable, Union
+
+from Objects.Effects import ALL_EFFECTS
+from Objects.Spells import get_all_spells
 
 class Player:
     """The Player class which stores all information for every player.
     """
-    def __init__(self, name: str, max_health_points: int=30, armor: int=0) -> None:
+    def __init__(self, name: str,
+                 start_spells: Union[dict, Iterable],
+                 max_health_points: int=30,
+                 health_points: int=0,
+                 mana_points: int=0,
+                 armor: int=0) -> None:
         """For creating a player there should be his name. Another properties have default values.
         Start health and mana points of a player are max_health_points, max mana points are max_health_points + 10.
 
@@ -22,10 +30,25 @@ class Player:
             raise ValueError(f"Player's name must be a string, not {type(name)}")
         self._name = name
         self._max_health_points = max_health_points
-        self._health_points = max_health_points
-        self._mana_points = max_health_points
+        self._health_points = health_points if health_points > 0 else max_health_points
+        self._mana_points = mana_points if mana_points > 0 else max_health_points
         self._armor = armor
-        # effects list contain a dicts with indexes of effects, its duration and possibility of clearing
+        # spells of each player saves in the dict, where a key is a index of a spell and a value is its count
+        if isinstance(start_spells, dict):
+            self._spells = start_spells
+        elif isinstance(start_spells, Iterable):
+            self._spells = dict()
+            for spell in start_spells:
+                if spell in self._spells:
+                    self._spells[spell] += 1
+                else:
+                    self._spells[spell] = 1
+        else:
+            raise ValueError(f"Wrong data used for player's spells initiate")
+        # contain effects in a list as dicts with titles of effects as keys, values are dicts with:
+        # timer: when an effect will be executed. If it < 0, it await, else it runs until timer < a duration of an effect
+        # duration: how much an effect will work
+        # is_locked: shows is an effect is cleanable. Not the same as is_clearable in an effect description 
         self._effects = list()
 
     def __repr__(self) -> str:
@@ -81,13 +104,26 @@ class Player:
         else:
             self._health_points += points
 
+    def add_max_hp(self, points: int) -> None:
+        self._check_points(points, f"The value to add max hp should be >= 0, not {points}!")
+        self._max_health_points += points
+
+    def sub_max_hp(self, points: int) -> None:
+        self._check_points(points, f"The value to sub max hp should be >= 0, not {points}!")
+        self._max_health_points -= points
+
     def burn_mp(self, points: int) -> None:
         self._check_points(points, f"The value to burn mana points should be >= 0, not {points}!")
         self._mana_points -= points
 
     def restore_mp(self, points: int) -> None:
         self._check_points(points, f"The value to resore mana points should be >= 0, not {points}!")
-        self._mana_points 
+        self._mana_points += points
+        if self._mana_points > self.max_mana_points:
+            self._mana_points = self.max_mana_points
+
+    def add_armor(self, points: int) -> None:
+        self._armor += points
 
     def kill(self) -> None:
         """This method allows to kill a player with removing all his effects.
@@ -97,21 +133,66 @@ class Player:
         self._armor = 0
         self._effects.clear()
 
-    def add_effect(self, idx: int, duration: int=1, is_cleanable: int=True) -> None:
-        self._effects.append({"idx": idx,
-                              "duration": duration,
-                              "is_cleanable": is_cleanable
-                            })
+    def get_effects(self) -> list:
+        return self._effects.copy()
 
-    def clean_effects(self, hard: bool=False) -> None:
-        """Clean effects from a player. It can clean even not cleanable if hard is True.
+    def add_effect(self, title: str, timer: int=0, duration: int=1, is_locked: bool=False) -> None:
+        self._effects.append({"title": title, "timer": timer, "is_locked": is_locked, "duration": duration})
+
+    def clean_effects(self, is_hard: bool=False) -> None:
+        """Clean effects from a player. It can clean even not cleanable if is_hard is True.
 
         Args:
-            hard (bool, optional): A flag to clean all effects. Defaults to False.
+            is_hard (bool, optional): A flag to clean all effects. Defaults to False.
         """
         for e in self._effects.copy():
-            if hard or not (e["is_cleanable"] or ALL_EFFECTS[e["idx"]]["is_cleanable"]):
+            if self._is_clearable(e["title"], is_hard):
                 self._effects.remove(e)
+
+    def remove_effect(self, title: str, is_hard=False) -> bool:
+        for e in self._effects: # search an effect title
+            if e["title"] == title and self._is_clearable(title, is_hard):
+                self._effects.remove(e)
+                return True
+        return False
+
+    def remove_oldest_effect(self, is_hard: bool=False) -> bool:
+        for e in self._effects:
+            if self._is_clearable(e["title"], is_hard):
+                self._effects.remove(e)
+                return True
+        return False
+
+    def remove_newest_effect(self, is_hard: bool=False) -> bool:
+        for e in self._effects[::-1]:
+            if self._is_clearable(e["title"], is_hard):
+                self._effects.remove(e)
+                return True
+        return False
+
+    def _is_clearable(self, title: str, is_hard: bool) -> bool:
+        return is_hard or not self._effects[title]["is_locked"] and ALL_EFFECTS[title]["is_clearable"]
+
+    def add_spell(self, spell_idx: int, count: int=1) -> None:
+        if spell_idx not in get_all_spells():
+            raise ValueError(f"There is no spell {spell_idx} for adding!")
+        if count <=0:
+            raise ValueError(f"Can't add less than 1 spell!")
+        if spell_idx in self._spells:
+            self._spells[spell_idx] += count
+        else:
+            self._spells[spell_idx] = count
+
+    def remove_spell(self, spell_idx: int, count: int=1) -> None:
+        if spell_idx not in get_all_spells():
+            raise ValueError(f"There is no spell {spell_idx} for adding!")
+        if count <=0:
+            raise ValueError(f"Can't add less than 1 spell!")
+        if spell_idx in self._spells:
+            self._spells[spell_idx] -= count
+
+    def clear_spells(self) -> None:
+        self._spells.clear()
 
     def dump(self) -> dict:
         """Allows to save a player as a dict.
@@ -133,8 +214,8 @@ class Player:
         Args:
             stored_player (dict): A dict with player's properties.
         """
-        self._max_health_points = stored_player["max_health_points"]
-        self._health_points = stored_player["health_points"]
-        self._mana_points = stored_player["mana_points"]
-        self._armor = stored_player["armor"]
-        self._effects = stored_player["effects"]
+        self._max_health_points = int(stored_player["max_health_points"])
+        self._health_points = int(stored_player["health_points"])
+        self._mana_points = int(stored_player["mana_points"])
+        self._armor = int(stored_player["armor"])
+        self._effects = OrderedDict(stored_player["effects"])

@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
 
-from typing import Dict, Set, Iterable
+from typing import Dict,  Iterable
 
-from .Player import Player
+from Objects.Player import Player
 
 
 class Team:
