@@ -4,13 +4,13 @@ from collections import OrderedDict
 from typing import Iterable, Union
 
 from Objects.Effects import ALL_EFFECTS
-from Objects.Spells import get_all_spells
+from Objects.Spells import ALL_SPELLS, get_all_spells
 
 class Player:
     """The Player class which stores all information for every player.
     """
     def __init__(self, name: str,
-                 start_spells: Union[dict, Iterable],
+                 start_spells: Union[dict, Iterable]=None,
                  max_health_points: int=30,
                  health_points: int=0,
                  mana_points: int=0,
@@ -33,18 +33,22 @@ class Player:
         self._health_points = health_points if health_points > 0 else max_health_points
         self._mana_points = mana_points if mana_points > 0 else max_health_points
         self._armor = armor
+        self._is_stunned = False
         # spells of each player saves in the dict, where a key is a index of a spell and a value is its count
-        if isinstance(start_spells, dict):
-            self._spells = start_spells
-        elif isinstance(start_spells, Iterable):
-            self._spells = dict()
-            for spell in start_spells:
-                if spell in self._spells:
-                    self._spells[spell] += 1
-                else:
-                    self._spells[spell] = 1
+        if start_spells:
+            if isinstance(start_spells, dict):
+                self._spells = start_spells
+            elif isinstance(start_spells, Iterable):
+                self._spells = dict()
+                for spell in start_spells:
+                    if spell in self._spells:
+                        self._spells[spell] += 1
+                    else:
+                        self._spells[spell] = 1
+            else:
+                raise ValueError(f"Wrong data used for player's spells initiate")
         else:
-            raise ValueError(f"Wrong data used for player's spells initiate")
+            self._spells = dict()
         # contain effects in a list as dicts with titles of effects as keys, values are dicts with:
         # timer: when an effect will be executed. If it < 0, it await, else it runs until timer < a duration of an effect
         # duration: how much an effect will work
@@ -193,6 +197,14 @@ class Player:
 
     def clear_spells(self) -> None:
         self._spells.clear()
+
+    def can_move(self):
+        if not self.is_alive: # can't move if dead
+            return False
+        for spell in self._spells: # check if user have moves what works in stun
+            if ALL_SPELLS[spell]["works_in_stun"] == True:
+                return True
+        return not self._is_stunned # else just return if stunned
 
     def dump(self) -> dict:
         """Allows to save a player as a dict.

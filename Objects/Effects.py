@@ -8,9 +8,9 @@
 """
 
 ALL_EFFECTS = {
-    "mana_resist": {"is_clearable": True, "type": "buff"  , "reaction_time": 0},
-    "prophecy": {"is_clearable": True, "type": "buff"  , "reaction_time": 0},
-    "falling": {"is_clearable": True, "type": "debuff", "reaction_time": 0},
-    "levitate": {"is_clearable": True, "type": "debuff", "reaction_time": 0},
+    "mana_resist":   {"is_clearable": True, "type": "buff", "reaction_time": 0},
+    "prophecy":      {"is_clearable": True, "type": "buff", "reaction_time": 0},
+    "falling":       {"is_clearable": True, "type": "debuff", "reaction_time": 0},
+    "levitate":      {"is_clearable": True, "type": "debuff", "reaction_time": 0},
     "damage_resist": {"is_clearable": True, "type": "debuff", "reaction_time": 0},
 }

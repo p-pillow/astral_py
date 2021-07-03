@@ -10,34 +10,45 @@ from Objects.Spells.functions import *
 if TYPE_CHECKING:
     from Objects.Player import Player
 
-SPELLS_TYPES = {
-    "SELF": 0,
-    "DIRECTED_ENEMY": 1,
-    "DIRECTED_ALLY": 2,
-    "MASSIVE_ENEMY": 3,
-    "MASSIVE_ALLY": 4,
-    "ALL" : 5
-}
+class Spell_targets:
+    SELF = 0
+    DIRECTED = 1
+    MASSIVE_ENEMY = 3
+    MASSIVE = 4
+    ALL = 5
+    ALLY = 6
+    ENEMY = 7
+
+class Spell_types:
+    ALL = 0
+    ATTACK = 1
+    DEFENCE = 2
+
 
 ALL_SPELLS = {
     0: {
         # meditation
-        1 :{"priority": 21, "type": SPELLS_TYPES["SELF"], "func": meditation},
+        1 :{"priority": 21, "target_type": Spell_targets.SELF, "func": meditation},
         # run
-        2: {"priority": 18, "type": SPELLS_TYPES["SELF"], "func": run},
+        2: {"priority": 18, "target_type": Spell_targets.SELF, "func": run},
         # defence
-        3: {"priority": 20, "type": SPELLS_TYPES["SELF"], "func": defence},
+        3: {"priority": 20, "target_type": Spell_targets.SELF, "func": defence},
         # levitation
-        4: {"priority": 20, "type": SPELLS_TYPES["SELF"], "func": fly},
+        4: {"priority": 20, "target_type": Spell_targets.SELF, "func": fly},
         # suicide
-        5: {"priority": 1,  "type": SPELLS_TYPES["SELF"], "func": suicide},
+        5: {"priority": 1,  "target_type": Spell_targets.SELF, "func": suicide},
         # fortune
-        6: {"priority": 24, "type": SPELLS_TYPES["SELF"], "func": shuffle_spells},
+        6: {"priority": 24, "target_type": Spell_targets.SELF, "func": shuffle_spells},
         # first aid
-        7: {"priority": 23, "type": SPELLS_TYPES["SELF"], "func": first_aid},
+        7: {"priority": 23, "target_type": Spell_targets.SELF, "func": first_aid},
     },
     1: {
-        1: {"priority": 18, "type": SPELLS_TYPES["SELF"], "func": fire_arrow},
+        1 : {"priority": 27, "type": Spell_types.ATTACK,  "works_in_stun": False,"target_type": (Spell_targets.DIRECTED, Spell_targets.ENEMY), "func": fire_arrow},
+        2 : {"priority": 27, "type": Spell_types.ATTACK,  "works_in_stun": False,"target_type": (Spell_targets.DIRECTED, Spell_targets.ENEMY), "func": poison_spit},
+        12: {"priority": 27, "type": Spell_types.DEFENCE, "works_in_stun": False,"target_type": (Spell_targets.DIRECTED, Spell_targets.ALLY), "func": healing},
+        15: {"priority": 28, "type": Spell_types.ATTACK,  "works_in_stun": False,"target_type": (Spell_targets.DIRECTED, Spell_targets.ENEMY), "func": nightmare},
+        19: {"priority": 22, "type": Spell_types.ALL,     "works_in_stun": False,"target_type": (Spell_targets.DIRECTED, ), "func": dispelling},
+        24: {"priority": 21, "type": Spell_types.DEFENCE, "works_in_stun": False,"target_type": (Spell_targets.DIRECTED, Spell_targets.ALLY), "func": magic_shield},
     }
 }
 
@@ -55,10 +66,5 @@ def get_all_spells() -> list():
     all_spells_idx = list()
     for spell_lvl in ALL_SPELLS:
         for spell_idx in ALL_SPELLS[spell_lvl]:
-            if spell_lvl == 0:
-                continue
-            if spell_idx < 10:
-                all_spells_idx.append(spell_lvl*10 + spell_idx)
-            else:
-                all_spells_idx.append(spell_lvl*100 + spell_idx)
+            all_spells_idx.append(f"{spell_lvl}{spell_idx}")
     return all_spells_idx

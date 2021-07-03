@@ -34,11 +34,14 @@ class Team:
         else:
             raise ValueError(f"In {self._title} team no player with name {name}")
 
+    def __iter__(self):
+        return iter(self._members.values())
+
     def __repr__(self) -> str:
         return f"<Team {self._title}>"
 
     def __str__(self) -> str:
-        members_str = ',\n\t'.join(str(p) for p in self._members)
+        members_str = ',\n\t'.join(str(self._members[p]) for p in self._members)
         return f"Team {self._title}:\n\t{members_str}"
 
     @property
@@ -55,3 +58,6 @@ class Team:
 
     def get_score(self) -> int:
         return sum(self._members[name].score for name in self._members)
+
+    def get_active_members(self) -> list:
+        return [name for name in self._members.copy() if self._members[name].can_move()]

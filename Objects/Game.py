@@ -1,13 +1,16 @@
 # -*- coding: utf-8 -*-
 
-from Objects.Team import Team
 import logging
+import random
+from itertools import chain
 from datetime import datetime
-from typing import Iterable, Set, Dict, Union
-from collections import Counter
+from typing import Dict, Iterable, Set, Union, cast
 
-from .Player import Player
-from .IO_handler import Std_IO_handler, IO_handler
+from Objects.Team import Team
+from Objects.IO_handler import IO_handler, Std_IO_handler
+from Objects.Player import Player
+from Objects.Localization import RUS_TEXTS
+from Objects.Spells import get_all_spells
 
 
 class Game:
@@ -18,6 +21,9 @@ class Game:
                 rounds: int=30,
                 loglevel: int=logging.WARNING,
                 io_handler: IO_handler=Std_IO_handler(),
+                random_seed: int=0,
+                message_splitter: str="\n",
+                messages: dict=RUS_TEXTS,
                 **player_kwargs) -> None:
         """Main class, which manages teams, spells, moves of players and etc.
 
@@ -35,8 +41,15 @@ class Game:
             ValueError: If teams is Iterable and consists not Team objects.
         """
         self._logger = logging.Logger(name=f"Game {datetime.now()}", level=loglevel)
+        self._logger.debug("Logger created")
+        random.seed(random_seed)
+        self._logger.debug(f"Random seed is {random_seed}")
         self._io_handler = io_handler
         self._rounds = rounds
+        self._messages = messages
+        self._message_splitter = message_splitter
+        # initial spells
+        player_kwargs["start_spells"] = {11, 112, 119, 124}
         if isinstance(teams, dict): # make teams from a dict with names
             self._teams: Set[Team] = self.make_teams_from_dict(teams)
         elif isinstance(teams, Iterable): # teams already created
@@ -52,17 +65,18 @@ class Game:
     def run(self) -> None:
         """Runs the game.
         """
-        for round_num in (1, self._rounds+1):
-            pass
+        for round_num in range(1, self._rounds+1):
+            self.print(self._messages["events"]["new_round"].format(round_num))
+            # get moves of players
+            moves = self.get_moves()
+            print(moves)
+        # the end of a game
         winners = self.get_winners()
         if len(winners) == 1:
-            self._io_handler.print(f"The winner is {str(next(iter(winners)))}")
+            self.print(self._messages["events"]["winner"].format(str(self.get_team(next(iter(winners))))))
         else:
-            winners_str = '\n'.join((f"{str(t)}" for t in winners))
-            self._io_handler.print(f"Draw between \n{winners_str}")
-
-    def get_alive(self):
-        return {t.title: t.alive_members for t in self._teams}
+            winners_str = '\n'.join((str(self.get_team(t)) for t in sorted(winners)))
+            self.print(self._messages["events"]["draw"].format(winners_str))
 
     def get_winners(self) -> set[Team]:
         """Select winners. If 1 team has more alive players, it win, else count by points
@@ -85,6 +99,59 @@ class Game:
             if title == t.title:
                 return t
         raise ValueError(f"No such team: {title}")
+
+    def get_all_players(self, only_alive: bool=False) -> list:
+        return [p.name for p in chain.from_iterable(self._teams) if not only_alive or only_alive and p.is_alive]
+
+    def get_moves(self) -> dict:
+        moves = dict()
+        # get names of players what can move
+        players_can_move = list()
+        for t in self._teams:
+            players_can_move.extend(t.get_active_members())
+        # get all moves
+        self.print(self._messages["events"]["ask_move"])
+        while len(moves) != len(players_can_move):
+            move = self._io_handler.get_move()
+            if not move:
+                self._logger.warning(self._messages["warnings"]["empty_move"])
+                continue
+            caster = next(iter(move)) # a move contains just one key
+            # check caster's name
+            if caster not in self.get_all_players():
+                self._logger.warning(self._messages["warnings"]["player_not_exists"].format(caster))
+                continue
+            if caster not in players_can_move:
+                self._logger.warning(self._messages["warnings"]["wrong_caster"].format(caster))
+                continue
+            if not move[caster]["spell"].isdigit():
+                spell_idx = self.find_by_alias()
+                if not spell_idx:
+                    continue
+                move[caster]["spell"] = spell_idx
+            if move[caster]["spell"] not in get_all_spells():
+                self._logger.warning(self._messages["warnings"]["spell_not_exists"].format(move[caster]["spell"]))
+                continue
+            if caster in moves:
+                self.print(self._messages["events"]["move_updated"].format(caster, move[caster]["spell"], move[caster]["target"]))
+            else:
+                self.print(self._messages["events"]["move_saved"].format(caster, move[caster]["spell"], move[caster]["target"]))
+            moves.update(move)
+        return moves
+
+    def find_by_alias(self, alias: str) -> str:
+        for level in self._messages["spells"]:
+            for spell_idx in self._messages["spells"][level]:
+                if self._messages["spells"][level][spell_idx]["alias"] == alias:
+                    return f"{level}{spell_idx}"
+        self._logger.warning(f"")
+        return None
+
+    def input(self, *args, **kwargs) -> None:
+        self._io_handler.input(*args, **kwargs)
+    
+    def print(self, message) -> None:
+        self._io_handler.print(f"{message}{self._message_splitter}")
 
     @staticmethod
     def make_teams_from_dict(teams_dict: Dict[str, Iterable[str]], **player_kwargs) -> Set[Team]:
