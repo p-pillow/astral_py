@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-
+ 
 RUS_TEXTS = {
     "spells" : {
         0 : { # 0 level
@@ -7,13 +7,34 @@ RUS_TEXTS = {
                 "self_message": "{player_name} медитирует",
                 "self_lose_message": "{player_name} не может сосредоточиться на медитации"
                 },
-            2 : {"title" : "Бег",       "alias": 'б',
+            2 : {"title" : "Бег", "alias": 'б',
                 "self_message": "{player_name} стремительно убегает",
                 "self_lose_message": "{player_name} не может убежать"
                 },
             3 : {"title" : "Левитация", "alias": 'л',
                 "self_message": "{player_name} взмывает в воздух",
                 "self_lose_message": "{player_name} не может взлететь"
+                },
+            4: {"title" : "Фортуна", "alias": 'ф',
+                "self_message": "{player_name} сбрасывает все свои заклинания, заменяя новыми",
+                "self_lose_message": "{player_name} не может сменить свои заклинания"
+            },
+            5: {"title" : "Суицид", "alias": 'гг',
+                "self_message": "{player_name} сводит счеты со своей жизнью...",
+                "self_lose_message": "{player_name} не удалось покончить с собой..."
+            },
+            6: {"title" : "Обмен", "alias": 'о',
+                "self_message": "{player_name} обменивает {dropped_spells} на заклинание второго уровня",
+                "self_lose_message": "{player_name} не может обменять свои заклинания",
+                "self_lose_message2": "У {player_name} недостаточно заклинаний для обмена и он теряет все!"
+                },
+            7: {"title" : "Жертва", "alias": 'ж',
+                "self_message": "{player_name}  жертвует {dropped_spells} ради заклинания третьего уровня",
+                "self_lose_message": "{player_name} не может пожертвовать своими заклинаниями"
+                },
+            8: {"title" : "Защита", "alias": 'з',
+                "self_message": "{player_name} уходит в защиту",
+                "self_lose_message": "{player_name} не может уйти в защиту"
                 },
         },
         1: { # 1 level
@@ -51,7 +72,13 @@ RUS_TEXTS = {
     },
     "effects": {
         1: {"title": "Горение", "message": "Горение наносит {player_name} {damage} урона"},
-
+        2: {"title": "Отравление", "message": "Отравление наносит {player_name} {damage} урона"},
+        3: {"title": "Лечение", "message": "Лечение восстанавливает у {player_name} {healing} здоровья"},
+        4: {"title": "Кощмарный сон", "message": "Кощмарный сон сжигает у {player_name} {mpburn} и заклинание {dropped_spells}"},
+        5: {"title": "Развеивание", "message": "Развеивание снимает с {player_name} эффекты {dropped_effects}"},
+        6: {"title": "Защита", "message": "Защита {player_name} сбрасывает эффект {dropped_effects}"},
+        7: {"title": "Медитация", "message": "Медитация восстанавливает у {player_name} {mpup} маны"},
+ 
     },
     "events": {
         "new_round": "Раунд №{}",
@@ -65,6 +92,6 @@ RUS_TEXTS = {
         "player_not_exists": "Игрок {} не существует!",
         "wrong_caster": "Игрок {} не может совершить ход!",
         "empty_move": "Вы ввели пустой ход!",
-        "spell_not_exists": "Заклинания {} не существует в игре!"
+        "spell_not_exists": "Заклинания {} не существует в игре!",
     }
 }
