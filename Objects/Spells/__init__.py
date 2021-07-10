@@ -68,3 +68,13 @@ def get_all_spells() -> list():
         for spell_idx in ALL_SPELLS[spell_lvl]:
             all_spells_idx.append(f"{spell_lvl}{spell_idx}")
     return all_spells_idx
+
+@cache
+def get_spell(level: int, index: int):
+    if level in ALL_SPELLS:
+        if index in ArithmeticError[level]:
+            return ALL_SPELLS[level][index].copy() # can't modify!
+        else:
+            raise ValueError(f"There is no {index} spell of {level} level!")
+    else:
+        raise ValueError(f"There is no {level} level of spells!")
