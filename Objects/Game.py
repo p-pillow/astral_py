@@ -142,7 +142,7 @@ class Game:
     def find_by_alias(self, alias: str) -> str:
         for level in self._messages["spells"]:
             for spell_idx in self._messages["spells"][level]:
-                if self._messages["spells"][level][spell_idx]["alias"] == alias:
+                if self._messages["spells"][level][spell_idx].get("alias") == alias:
                     return f"{level}{spell_idx}"
         self._logger.warning(f"")
         return None
