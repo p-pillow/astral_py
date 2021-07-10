@@ -66,17 +66,17 @@ class Game:
         """Runs the game.
         """
         for round_num in range(1, self._rounds+1):
-            self.print(self._messages["events"]["new_round"].format(round_num))
+            self.print_message(("events", "new_round"), round_num)
             # get moves of players
             moves = self.get_moves()
             print(moves)
         # the end of a game
         winners = self.get_winners()
         if len(winners) == 1:
-            self.print(self._messages["events"]["winner"].format(str(self.get_team(next(iter(winners))))))
+            self.print_message(("events", "winner"), str(self.get_team(next(iter(winners)))))
         else:
             winners_str = '\n'.join((str(self.get_team(t)) for t in sorted(winners)))
-            self.print(self._messages["events"]["draw"].format(winners_str))
+            self.print_message(("events", "draw"), winners_str)
 
     def get_winners(self) -> set[Team]:
         """Select winners. If 1 team has more alive players, it win, else count by points
@@ -110,32 +110,34 @@ class Game:
         for t in self._teams:
             players_can_move.extend(t.get_active_members())
         # get all moves
-        self.print(self._messages["events"]["ask_move"])
+        self.print_message(("events", "ask_move"))
         while len(moves) != len(players_can_move):
             move = self._io_handler.get_move()
             if not move:
-                self._logger.warning(self._messages["warnings"]["empty_move"])
+                self.warning(("warnings", "empty_move"))
                 continue
             caster = next(iter(move)) # a move contains just one key
             # check caster's name
             if caster not in self.get_all_players():
+                self.warning(("warnings", "player_not_exists"), caster)
                 self._logger.warning(self._messages["warnings"]["player_not_exists"].format(caster))
                 continue
             if caster not in players_can_move:
-                self._logger.warning(self._messages["warnings"]["wrong_caster"].format(caster))
+                self.warning(("warnings", "wrong_caster"), caster)
                 continue
             if not move[caster]["spell"].isdigit():
-                spell_idx = self.find_by_alias()
-                if not spell_idx:
+                spell_idx = self.find_by_alias(move[caster]["spell"])
+                if not spell_idx: # find_by_alias already has a warning
+                    self.warning(("warnings", "spell_not_exists"), move[caster]["spell"])
                     continue
-                move[caster]["spell"] = spell_idx
+                move[caster]["spell"] = spell_idx # update if found
             if move[caster]["spell"] not in get_all_spells():
-                self._logger.warning(self._messages["warnings"]["spell_not_exists"].format(move[caster]["spell"]))
+                self.warning(("warnings", "spell_not_exists"), move[caster]["spell"])
                 continue
             if caster in moves:
-                self.print(self._messages["events"]["move_updated"].format(caster, move[caster]["spell"], move[caster]["target"]))
+                self.print_message(("events", "move_updated"), caster, move[caster]["spell"], move[caster]["target"])
             else:
-                self.print(self._messages["events"]["move_saved"].format(caster, move[caster]["spell"], move[caster]["target"]))
+                self.print_message(("events", "move_saved"), caster, move[caster]["spell"], move[caster]["target"])
             moves.update(move)
         return moves
 
@@ -144,14 +146,35 @@ class Game:
             for spell_idx in self._messages["spells"][level]:
                 if self._messages["spells"][level][spell_idx].get("alias") == alias:
                     return f"{level}{spell_idx}"
-        self._logger.warning(f"")
         return None
 
     def input(self, *args, **kwargs) -> None:
         self._io_handler.input(*args, **kwargs)
+
+    def find_message(self, message_keys: Iterable) -> str:
+        message_dict = self._messages
+        for k in message_keys:
+            if k in message_dict:
+                message_dict = message_dict[k]
+            else:
+                self._logger.error(f"There is no {k} in {message_dict.keys()}")
+                break
+        return message_dict
+
+    def print(self, *args, **kwargs):
+        self._io_handler.print(*args, **kwargs)
     
-    def print(self, message) -> None:
-        self._io_handler.print(f"{message}{self._message_splitter}")
+    def print_message(self, message_keys: Iterable, *format_args, **format_kwargs) -> None:
+        message = self.find_message(message_keys)
+        self._io_handler.print(f"{message.format(*format_args, **format_kwargs)}{self._message_splitter}")
+
+    def warning(self, message_keys: Iterable, *format_args, **format_kwargs) -> None:
+        message = self.find_message(message_keys)
+        self._logger.warning(message.format(*format_args, **format_kwargs))
+
+    def error(self, message_keys: Iterable, *format_args, **format_kwargs) -> None:
+        message = self.find_message(message_keys)
+        self._logger.error(message.format(*format_args, **format_kwargs))
 
     @staticmethod
     def make_teams_from_dict(teams_dict: Dict[str, Iterable[str]], **player_kwargs) -> Set[Team]:
