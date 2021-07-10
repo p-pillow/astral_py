@@ -21,7 +21,7 @@ class IO_handler:
             [type]: [description]
         """
         splitted_move = self.input().split(' ')
-        if len(splitted_move) != 2 and len(splitted_move) != 2:
+        if len(splitted_move) != 2 and len(splitted_move) != 3:
             return None
         return {
             splitted_move[0]: {
