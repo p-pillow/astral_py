@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from functools import cache
+from math import log
 from typing import TYPE_CHECKING
 
 from Objects.Spells.functions import *
@@ -13,11 +14,10 @@ if TYPE_CHECKING:
 class Spell_targets:
     SELF = 0
     DIRECTED = 1
-    MASSIVE_ENEMY = 3
-    MASSIVE = 4
-    ALL = 5
-    ALLY = 6
-    ENEMY = 7
+    MASSIVE = 2
+    ALL = 3
+    ALLY = 4
+    ENEMY = 5
 
 class Spell_types:
     ALL = 0
@@ -52,27 +52,27 @@ ALL_SPELLS = {
     }
 }
 
-def use_spell(spell_idx: int, spell_lvl: int, caster: Player):
-    if spell_lvl in ALL_SPELLS:
-        if spell_idx in ALL_SPELLS[spell_lvl]:
-            ALL_SPELLS[spell_lvl][spell_idx]["func"](caster)
+def use_spell(level: int, index: int, caster: Player=None, target: Player=None):
+    if level in ALL_SPELLS:
+        if index in ALL_SPELLS[level]:
+            ALL_SPELLS[level][index]["func"](caster)
         else:
-            raise ValueError(f"There is no index {spell_idx} of {spell_lvl} level!")
+            raise ValueError(f"There is no index {index} of {level} level!")
     else:
-        raise ValueError(f"There is no level {spell_lvl}!")
+        raise ValueError(f"There is no level {level}!")
 
 @cache
 def get_all_spells() -> list():
     all_spells_idx = list()
     for spell_lvl in ALL_SPELLS:
         for spell_idx in ALL_SPELLS[spell_lvl]:
-            all_spells_idx.append(f"{spell_lvl}{spell_idx}")
+            all_spells_idx.append((spell_lvl, spell_idx))
     return all_spells_idx
 
 @cache
-def get_spell(level: int, index: int):
+def get_spell_description(level: int, index: int):
     if level in ALL_SPELLS:
-        if index in ArithmeticError[level]:
+        if index in ALL_SPELLS[level]:
             return ALL_SPELLS[level][index].copy() # can't modify!
         else:
             raise ValueError(f"There is no {index} spell of {level} level!")
