@@ -12,7 +12,10 @@ class Team:
         if not isinstance(title, str):
             raise ValueError(f"Team's title must be a string, not {type(title)}")
         self._title: str = title
-        self._members: Dict[Player] = {m.name: m for m in members}
+        self._members: Dict[Player] = dict()
+        for m in members:
+            self._members[m.name] = m
+            m.set_team(self)
 
     def __len__(self):
         return len(self._members)
@@ -55,6 +58,7 @@ class Team:
             raise ValueError(f"A Player {member.name} is already in the team")
         else:
             self._members[member.name] = member
+            member.set_team(self)
 
     def get_score(self) -> int:
         return sum(self._members[name].score for name in self._members)

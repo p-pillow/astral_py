@@ -133,6 +133,7 @@ class Game:
         self.print_message(("events", "ask_move"))
         while len(moves) != len(players_can_move):
             move = self._io_handler.get_move()
+            self._logger.debug(f"Input move: {move}")
             if not move:
                 self.warning(("warnings", "empty_move"))
                 continue
@@ -158,7 +159,7 @@ class Game:
             # target handling
             if move[caster].get("target"):
                 # check if a spell can be used as a target
-                if not self.check_target(move[caster].get("target")):
+                if not self.check_target(caster, move[caster]["spell"], move[caster]["target"]):
                     self.warning(("warnings", "bad_target"), move[caster]["spell"], move[caster]["spell"])
                     continue
             else:
@@ -171,15 +172,18 @@ class Game:
             moves.update(move)
         return moves
 
-    def check_target(self, target_name, spell):
-        if not target_name or not spell:
+    def check_target(self, caster_name, spell, target_name):
+        if not target_name or not spell or not caster_name:
             return False
+        spell_descr = get_spell_description(spell)
+        caster_player = self.search_player(caster_name)
         target_player = self.search_player(target_name)
-        if not target_player.is_alive:
+        if spell_descr["target_type"] == Spell_targets.SELF and caster_player != target_player:
             return False
-        spell_descr = get_spell_description(*spell)
-        if Spell_targets.ALL:
-            return True
+        if spell_descr["target_type"] == (Spell_targets.DIRECTED, Spell_targets.ENEMY) and caster_player.team != target_player.team:
+            return False
+        if spell_descr["target_type"] == (Spell_targets.DIRECTED, Spell_targets.ALLY) and caster_player.team == target_player.team:
+            return False
         return True
 
     def input(self, *args, **kwargs) -> None:

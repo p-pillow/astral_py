@@ -3,8 +3,8 @@
 from collections import OrderedDict
 from typing import Iterable, Union
 
-from Objects.Effects import ALL_EFFECTS
-from Objects.Spells import ALL_SPELLS, get_all_spells
+from Objects import ALL_EFFECTS, ALL_SPELLS, Team, get_all_spells
+
 
 class Player:
     """The Player class which stores all information for every player.
@@ -14,7 +14,8 @@ class Player:
                  max_health_points: int=30,
                  health_points: int=0,
                  mana_points: int=0,
-                 armor: int=0) -> None:
+                 armor: int=0,
+                 team: Team=None) -> None:
         """For creating a player there should be his name. Another properties have default values.
         Start health and mana points of a player are max_health_points, max mana points are max_health_points + 10.
 
@@ -34,6 +35,7 @@ class Player:
         self._mana_points = mana_points if mana_points > 0 else max_health_points
         self._armor = armor
         self._is_stunned = False
+        self._team = team
         # spells of each player saves in the dict, where a key is a index of a spell and a value is its count
         if start_spells:
             if isinstance(start_spells, dict):
@@ -88,6 +90,13 @@ class Player:
     @property
     def max_mana_points(self) -> int:
         return self._max_health_points + 10
+    
+    @property
+    def team(self):
+        return Team
+    
+    def set_team(self, team: Team):
+        self._team = team
 
     def damage(self, points: int) -> None:
         """A method allows to damage a player. It not allows to set health points < 0.
