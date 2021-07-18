@@ -2,15 +2,15 @@
 
 import logging
 import random
-from itertools import chain
 from datetime import datetime
-from typing import Dict, Iterable, Set, Union, cast
+from itertools import chain
+from typing import Dict, Iterable, Set, Union
 
-from Objects.Team import Team
 from Objects.IO_handler import IO_handler, Std_IO_handler
-from Objects.Player import Player
 from Objects.Localization import RUS_TEXTS
-from Objects.Spells import get_all_spells
+from Objects.Player import Player
+from Objects.Spells import Spell_targets, get_all_spells, get_spell_description, use_spell
+from Objects.Team import Team
 
 
 class Game:
@@ -69,7 +69,21 @@ class Game:
             self.print_message(("events", "new_round"), round_num)
             # get moves of players
             moves = self.get_moves()
-            print(moves)
+            for caster_name in sorted(moves, key=lambda caster_name: get_spell_description(get_level(int(moves[caster_name]["spell"])), get_index(int(moves[caster_name]["spell"]))["priority"])):
+                spell_level = get_level(moves[caster_name]["spell"])
+                spell_index = get_index(moves[caster_name]["spell"])
+                caster = self.search_player(caster_name)
+                spell = get_spell_description(spell_level, spell_index)
+                # check if a spell's targets should be few players
+                if spell["target_type"] == Spell_targets.ALL or spell["target_type"] == Spell_targets.MASSIVE:
+                    if isinstance(moves[caster_name]["target"], Iterable):
+                        targets = [self.search_player(t) for t in moves[caster_name]["target"]]
+                    else:
+                        targets = self.search_player(moves[caster_name]["target"])
+                else:
+                    target = self.search_player(moves[caster_name]["target"])
+                use_spell(spell_level, spell_index, caster, target)
+                self.print_message(("spells", spell_level, spell_index))
         # the end of a game
         winners = self.get_winners()
         if len(winners) == 1:
@@ -100,6 +114,12 @@ class Game:
                 return t
         raise ValueError(f"No such team: {title}")
 
+    def search_player(self, player_name: str) -> Player:
+        for t in self._teams:
+            if player_name in t:
+                return t[player_name]
+        return None
+
     def get_all_players(self, only_alive: bool=False) -> list:
         return [p.name for p in chain.from_iterable(self._teams) if not only_alive or only_alive and p.is_alive]
 
@@ -120,20 +140,30 @@ class Game:
             # check caster's name
             if caster not in self.get_all_players():
                 self.warning(("warnings", "player_not_exists"), caster)
-                self._logger.warning(self._messages["warnings"]["player_not_exists"].format(caster))
                 continue
             if caster not in players_can_move:
                 self.warning(("warnings", "wrong_caster"), caster)
                 continue
-            if not move[caster]["spell"].isdigit():
-                spell_idx = self.find_by_alias(move[caster]["spell"])
-                if not spell_idx: # find_by_alias already has a warning
-                    self.warning(("warnings", "spell_not_exists"), move[caster]["spell"])
-                    continue
-                move[caster]["spell"] = spell_idx # update if found
+            # make a spell as a tuple (spell_lvl, spell_idx)
+            if move[caster]["spell"].isdigit():
+                spell_lvl, spell_idx = int(move[caster]["spell"][0]), int(move[caster]["spell"][1:])
+                move[caster]["spell"] = (spell_lvl, spell_idx)
+            else:
+                spell = self._messages["aliases"].get(move[caster]["spell"])
+                move[caster]["spell"] = spell
+            # check if a spell exists
             if move[caster]["spell"] not in get_all_spells():
                 self.warning(("warnings", "spell_not_exists"), move[caster]["spell"])
                 continue
+            # target handling
+            if move[caster].get("target"):
+                # check if a spell can be used as a target
+                if not self.check_target(move[caster].get("target")):
+                    self.warning(("warnings", "bad_target"), move[caster]["spell"], move[caster]["spell"])
+                    continue
+            else:
+                # autotarget if it is possible
+                pass
             if caster in moves:
                 self.print_message(("events", "move_updated"), caster, move[caster]["spell"], move[caster]["target"])
             else:
@@ -141,12 +171,16 @@ class Game:
             moves.update(move)
         return moves
 
-    def find_by_alias(self, alias: str) -> str:
-        for level in self._messages["spells"]:
-            for spell_idx in self._messages["spells"][level]:
-                if self._messages["spells"][level][spell_idx].get("alias") == alias:
-                    return f"{level}{spell_idx}"
-        return None
+    def check_target(self, target_name, spell):
+        if not target_name or not spell:
+            return False
+        target_player = self.search_player(target_name)
+        if not target_player.is_alive:
+            return False
+        spell_descr = get_spell_description(*spell)
+        if Spell_targets.ALL:
+            return True
+        return True
 
     def input(self, *args, **kwargs) -> None:
         self._io_handler.input(*args, **kwargs)
