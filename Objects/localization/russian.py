@@ -3,36 +3,36 @@
 RUS_TEXTS = {
     "spells" : {
         0 : { # 0 level
-            1 : {"title" : "Медитация", "alias": 'м',
+            1 : {"title" : "Медитация",
                 "self_message": "{player_name} медитирует",
                 "self_lose_message": "{player_name} не может сосредоточиться на медитации"
                 },
-            2 : {"title" : "Бег", "alias": 'б',
+            2 : {"title" : "Бег",
                 "self_message": "{player_name} стремительно убегает",
                 "self_lose_message": "{player_name} не может убежать"
                 },
-            3 : {"title" : "Левитация", "alias": 'л',
+            3 : {"title" : "Левитация",
                 "self_message": "{player_name} взмывает в воздух",
                 "self_lose_message": "{player_name} не может взлететь"
                 },
-            4: {"title" : "Фортуна", "alias": 'ф',
+            4: {"title" : "Фортуна",
                 "self_message": "{player_name} сбрасывает все свои заклинания, заменяя новыми",
                 "self_lose_message": "{player_name} не может сменить свои заклинания"
             },
-            5: {"title" : "Суицид", "alias": 'гг',
+            5: {"title" : "Суицид",
                 "self_message": "{player_name} сводит счеты со своей жизнью...",
                 "self_lose_message": "{player_name} не удалось покончить с собой..."
             },
-            6: {"title" : "Обмен", "alias": 'о',
+            6: {"title" : "Обмен",
                 "self_message": "{player_name} обменивает {dropped_spells} на заклинание второго уровня",
                 "self_lose_message": "{player_name} не может обменять свои заклинания",
                 "self_lose_message2": "У {player_name} недостаточно заклинаний для обмена и он теряет все!"
                 },
-            7: {"title" : "Жертва", "alias": 'ж',
+            7: {"title" : "Жертва",
                 "self_message": "{player_name}  жертвует {dropped_spells} ради заклинания третьего уровня",
                 "self_lose_message": "{player_name} не может пожертвовать своими заклинаниями"
                 },
-            8: {"title" : "Защита", "alias": 'з',
+            8: {"title" : "Защита",
                 "self_message": "{player_name} уходит в защиту",
                 "self_lose_message": "{player_name} не может уйти в защиту"
                 },
@@ -70,6 +70,16 @@ RUS_TEXTS = {
                   },
         }
     },
+    "aliases": {
+        'м':  (0, 1),
+        'б':  (0, 2),
+        'л':  (0, 3),
+        'ф':  (0, 4),
+        'гг': (0, 5),
+        'о':  (0, 6),
+        'ж':  (0, 7),
+        'з':  (0, 8),
+    },
     "effects": {
         1: {"title": "Горение", "message": "Горение наносит {player_name} {damage} урона"},
         2: {"title": "Отравление", "message": "Отравление наносит {player_name} {damage} урона"},
@@ -93,5 +103,6 @@ RUS_TEXTS = {
         "wrong_caster": "Игрок {} не может совершить ход!",
         "empty_move": "Вы ввели пустой ход!",
         "spell_not_exists": "Заклинания {} не существует в игре!",
+        "bad_target": "Игрок {} не может быть целью заклинания {}!"
     }
 }
