@@ -69,21 +69,8 @@ class Game:
             self.print_message(("events", "new_round"), round_num)
             # get moves of players
             moves = self.get_moves()
-            for caster_name in sorted(moves, key=lambda caster_name: get_spell_description(get_level(int(moves[caster_name]["spell"])), get_index(int(moves[caster_name]["spell"]))["priority"])):
-                spell_level = get_level(moves[caster_name]["spell"])
-                spell_index = get_index(moves[caster_name]["spell"])
-                caster = self.search_player(caster_name)
-                spell = get_spell_description(spell_level, spell_index)
-                # check if a spell's targets should be few players
-                if spell["target_type"] == Spell_targets.ALL or spell["target_type"] == Spell_targets.MASSIVE:
-                    if isinstance(moves[caster_name]["target"], Iterable):
-                        targets = [self.search_player(t) for t in moves[caster_name]["target"]]
-                    else:
-                        targets = self.search_player(moves[caster_name]["target"])
-                else:
-                    target = self.search_player(moves[caster_name]["target"])
-                use_spell(spell_level, spell_index, caster, target)
-                self.print_message(("spells", spell_level, spell_index))
+            for caster_name in sorted(moves, key=lambda caster_name: get_spell_description(*moves[caster_name]["spell"])["priority"]):
+                pass
         # the end of a game
         winners = self.get_winners()
         if len(winners) == 1:
@@ -121,8 +108,14 @@ class Game:
         return None
 
     def get_all_players(self, only_alive: bool=False) -> list:
-        return [p.name for p in chain.from_iterable(self._teams) if not only_alive or only_alive and p.is_alive]
-
+        all_players = list()
+        for t in self._teams:
+            if only_alive: # TODO: optimize
+                all_players.extend(t.get_alive_members())
+            else:
+                all_players.extend(t.get_members())
+        return all_players
+                
     def get_moves(self) -> dict:
         moves = dict()
         # get names of players what can move
@@ -135,15 +128,15 @@ class Game:
             move = self._io_handler.get_move()
             self._logger.debug(f"Input move: {move}")
             if not move:
-                self.warning(("warnings", "empty_move"))
+                self.warning("empty_move")
                 continue
             caster = next(iter(move)) # a move contains just one key
             # check caster's name
             if caster not in self.get_all_players():
-                self.warning(("warnings", "player_not_exists"), caster)
+                self.warning("player_not_exists", caster)
                 continue
             if caster not in players_can_move:
-                self.warning(("warnings", "wrong_caster"), caster)
+                self.warning("wrong_caster", caster)
                 continue
             # make a spell as a tuple (spell_lvl, spell_idx)
             if move[caster]["spell"].isdigit():
@@ -154,17 +147,26 @@ class Game:
                 move[caster]["spell"] = spell
             # check if a spell exists
             if move[caster]["spell"] not in get_all_spells():
-                self.warning(("warnings", "spell_not_exists"), move[caster]["spell"])
+                self.warning("spell_not_exists", move[caster]["spell"])
                 continue
             # target handling
             if move[caster].get("target"):
                 # check if a spell can be used as a target
                 if not self.check_target(caster, move[caster]["spell"], move[caster]["target"]):
-                    self.warning(("warnings", "bad_target"), move[caster]["spell"], move[caster]["spell"])
+                    self.warning("bad_target", move[caster]["target"], move[caster]["spell"])
                     continue
             else:
                 # autotarget if it is possible
-                pass
+                targets = self.autotarget(caster, move[caster]["spell"])
+                spell_descr = get_spell_description(*move[caster]["spell"])
+                if len(targets) > 1:
+                    if Spell_targets.DIRECTED in spell_descr["target_type"]:
+                        self.warning("target_must_exist", move[caster]["spell"])
+                        continue
+                    else:
+                        move[caster]["target"] = targets
+                elif len(targets) == 1:
+                    move[caster]["target"] = targets[0]
             if caster in moves:
                 self.print_message(("events", "move_updated"), caster, move[caster]["spell"], move[caster]["target"])
             else:
@@ -173,11 +175,11 @@ class Game:
         return moves
 
     def check_target(self, caster_name, spell, target_name):
-        if not target_name or not spell or not caster_name:
-            return False
         spell_descr = get_spell_description(spell)
         caster_player = self.search_player(caster_name)
         target_player = self.search_player(target_name)
+        if not caster_player or not spell_descr or not target_player:
+            return False
         if spell_descr["target_type"] == Spell_targets.SELF and caster_player != target_player:
             return False
         if spell_descr["target_type"] == (Spell_targets.DIRECTED, Spell_targets.ENEMY) and caster_player.team != target_player.team:
@@ -185,6 +187,34 @@ class Game:
         if spell_descr["target_type"] == (Spell_targets.DIRECTED, Spell_targets.ALLY) and caster_player.team == target_player.team:
             return False
         return True
+    
+    def autotarget(self, caster_name: Player, spell: tuple) -> tuple:
+        """The method returns all possible values for the spell.
+
+        Args:
+            caster_name (Player): A caster of a spell.
+            spell (tuple): A tuple of form (spell_level, spell_index).
+        """
+        spell_descr = get_spell_description(*spell)
+        caster_player = self.search_player(caster_name)
+        if not spell_descr:
+            self.warning("spell_not_exists", spell)
+        if spell_descr["target_type"] == Spell_targets.SELF:
+            return (caster_player.name, )
+        elif spell_descr["target_type"] == Spell_targets.ALL:
+            return self.get_all_players(True)
+        if Spell_targets.ENEMY in spell_descr["target_type"]:
+            # get all enemies
+            enemies = list()
+            for t in self._teams:
+                if t != caster_player.team:
+                    enemies.extend(t.get_members())
+            return tuple(enemies)
+        elif Spell_targets.ALLY in spell_descr["target_type"]:
+            return tuple(caster_player.team.get_members())
+        else:
+            self.warning("spell_not_exists", spell)
+            return None
 
     def input(self, *args, **kwargs) -> None:
         self._io_handler.input(*args, **kwargs)
@@ -206,8 +236,8 @@ class Game:
         message = self.find_message(message_keys)
         self._io_handler.print(f"{message.format(*format_args, **format_kwargs)}{self._message_splitter}")
 
-    def warning(self, message_keys: Iterable, *format_args, **format_kwargs) -> None:
-        message = self.find_message(message_keys)
+    def warning(self, message_key: Iterable, *format_args, **format_kwargs) -> None:
+        message = self.find_message(("warnings", message_key))
         self._logger.warning(message.format(*format_args, **format_kwargs))
 
     def error(self, message_keys: Iterable, *format_args, **format_kwargs) -> None:

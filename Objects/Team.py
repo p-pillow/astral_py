@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-from typing import Dict,  Iterable
+from typing import Dict
 
 from Objects.Player import Player
 
@@ -38,7 +38,7 @@ class Team:
             raise ValueError(f"In {self._title} team no player with name {name}")
 
     def __iter__(self):
-        return iter(self._members.values())
+        return iter(self._members.keys())
 
     def __repr__(self) -> str:
         return f"<Team {self._title}>"
@@ -62,6 +62,22 @@ class Team:
 
     def get_score(self) -> int:
         return sum(self._members[name].score for name in self._members)
+    
+    def get_alive_members(self) -> list:
+        return [name for name in self._members.copy() if self._members[name].is_alive]  
 
     def get_active_members(self) -> list:
+        """Returns a list with active members names.
+
+        Returns:
+            list: A list with active members names.
+        """
         return [name for name in self._members.copy() if self._members[name].can_move()]
+    
+    def get_members(self) -> list:
+        """Returns a list with members names.
+
+        Returns:
+            list: A list with members names.
+        """
+        return list(self._members.keys())

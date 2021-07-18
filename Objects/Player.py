@@ -3,7 +3,8 @@
 from collections import OrderedDict
 from typing import Iterable, Union
 
-from Objects import ALL_EFFECTS, ALL_SPELLS, Team, get_all_spells
+from Objects.Effects import ALL_EFFECTS
+from Objects.Spells import ALL_SPELLS, get_all_spells
 
 
 class Player:
@@ -15,7 +16,7 @@ class Player:
                  health_points: int=0,
                  mana_points: int=0,
                  armor: int=0,
-                 team: Team=None) -> None:
+                 team: Iterable=None) -> None:
         """For creating a player there should be his name. Another properties have default values.
         Start health and mana points of a player are max_health_points, max mana points are max_health_points + 10.
 
@@ -93,9 +94,9 @@ class Player:
     
     @property
     def team(self):
-        return Team
+        return self._team
     
-    def set_team(self, team: Team):
+    def set_team(self, team: Iterable):
         self._team = team
 
     def damage(self, points: int) -> None:
